@@ -36,7 +36,18 @@ public class ContextTools {
     @Inject
     ApplicationTools applicationTools;
     
-    @Tool(description = "Provide complete current state + recent trends in one call")
+    @Tool(description = """
+            Get a comprehensive snapshot of JVM health including current state, recent trends, and health indicators.
+            Returns all key metrics across memory, GC, threads, CPU, and classes in a single call.
+            
+            No parameters required - automatically gathers:
+            - Current state: Heap, GC activity, threads, CPU usage, system memory, loaded classes
+            - Recent trends (5m): Heap growth rate, GC frequency, thread/CPU trends
+            - Health indicators: Heap pressure, GC pressure, thread health, CPU health with severity levels
+            
+            Use this tool for initial JVM health assessment or periodic health checks.
+            For deeper investigation of specific issues, use getInvestigationBundle with a focus area.
+            """)
     public Map<String, Object> getJvmHealthContext() {
         LOG.info("Executing getJvmHealthContext tool");
         
@@ -183,7 +194,21 @@ public class ContextTools {
         return result;
     }
     
-    @Tool(description = "Deep dive into one specific area with all related data")
+    @Tool(description = """
+            Perform a comprehensive deep-dive investigation into a specific JVM subsystem.
+            Returns current state, historical trends, and correlations in one call.
+            
+            Parameters:
+            - focusArea: The JVM subsystem to investigate. Options:
+              * "memory" - Heap status, memory pools, usage trends, memory-GC correlation
+              * "gc" - Garbage collection activity, efficiency, behavior, memory/CPU correlations
+              * "threads" - Thread state, activity patterns over time
+              * "cpu" - CPU usage, system resources, trends, CPU-GC correlation
+            - lookback: Time window for historical analysis (e.g., "5m", "1h", "2h", "24h"). Default: "1h"
+            
+            Use this tool when you need complete context about a specific subsystem for root cause analysis.
+            Example: focusArea="memory", lookback="2h" for investigating memory issues over 2 hours.
+            """)
     public Map<String, Object> getInvestigationBundle(
             String focusArea,
             String lookback) {

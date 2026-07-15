@@ -24,7 +24,22 @@ public class CorrelationTools {
     @Inject
     JvmMetricsService metricsService;
     
-    @Tool(description = "Show synchronized heap usage and GC activity for cause-effect analysis")
+    @Tool(description = """
+            Show synchronized heap usage and GC activity for cause-effect analysis.
+            Correlates heap utilization with GC frequency and time to identify if GC is triggered by memory pressure.
+            
+            Parameters:
+            - lookback: Time window to analyze (e.g., "5m", "1h", "2h", "24h"). Default: "1h"
+            - step: Sampling interval (e.g., "30s", "1m", "5m"). Default: "1m"
+            
+            Use this tool when:
+            - Determining if high heap usage causes frequent GC
+            - Analyzing GC effectiveness in reclaiming memory
+            - Identifying memory pressure patterns
+            - Understanding heap-GC relationship
+            
+            Returns: Synchronized time-series with heap usage/utilization, GC frequency, GC time, plus correlation coefficients.
+            """)
     public Map<String, Object> getMemoryGcCorrelation(
             String lookback,
             String step) {
@@ -124,7 +139,23 @@ public class CorrelationTools {
         return result;
     }
     
-    @Tool(description = "Show if GC is consuming CPU resources")
+    @Tool(description = """
+            Show if garbage collection is consuming CPU resources (OpenJ9 compatible).
+            Correlates CPU usage with GC time to identify if GC is a major CPU consumer.
+            
+            Parameters:
+            - lookback: Time window to analyze (e.g., "5m", "1h", "2h", "24h"). Default: "1h"
+            - step: Sampling interval (e.g., "30s", "1m", "5m"). Default: "1m"
+            
+            Use this tool when:
+            - Investigating high CPU usage issues
+            - Determining if GC is CPU-bound
+            - Analyzing CPU overhead from garbage collection
+            - Identifying if GC tuning could reduce CPU usage
+            
+            Note: Uses process_cpu_seconds_total for OpenJ9 compatibility.
+            Returns: Synchronized time-series with CPU cores and GC time %, plus correlation coefficient and averages.
+            """)
     public Map<String, Object> getCpuGcCorrelation(
             String lookback,
             String step) {
@@ -147,9 +178,9 @@ public class CorrelationTools {
             Instant end = Instant.now();
             result.put("end_time", end.toString());
             
-            // Get CPU usage over time
+            // Get CPU rate over time (compatible with OpenJ9)
             List<MetricValue> cpuValues = metricsService.getMetricRange(
-                "jvm_process_cpu_load", lookback, step);
+                "rate(process_cpu_seconds_total[1m])", lookback, step);
             
             // Get GC time percentage
             String gcTimeQuery = "rate(jvm_gc_collection_seconds_sum[1m]) * 100";
@@ -168,14 +199,13 @@ public class CorrelationTools {
                     MetricValue cpu = cpuValues.get(i);
                     MetricValue gcTime = gcTimeValues.get(i);
                     
-                    double processCpuPercent = cpu.getValue() * 100;
+                    // CPU is in cores, GC time is in percent
+                    double cpuCores = cpu.getValue();
                     double gcTimePercent = gcTime.getValue();
-                    double nonGcCpuPercent = Math.max(0, processCpuPercent - gcTimePercent);
                     
                     dataPoint.put("timestamp", cpu.getTimestamp().toString());
-                    dataPoint.put("process_cpu_percent", Math.round(processCpuPercent * 10.0) / 10.0);
+                    dataPoint.put("cpu_cores", Math.round(cpuCores * 1000.0) / 1000.0);
                     dataPoint.put("gc_time_percent", Math.round(gcTimePercent * 10.0) / 10.0);
-                    dataPoint.put("non_gc_cpu_percent", Math.round(nonGcCpuPercent * 10.0) / 10.0);
                     
                     synchronizedData.add(dataPoint);
                 }
@@ -186,29 +216,27 @@ public class CorrelationTools {
                 // Calculate correlation analysis
                 Map<String, Object> correlationAnalysis = new HashMap<>();
                 
-                // CPU vs GC time correlation
+                // CPU cores vs GC time correlation
                 double cpuGcCorr = calculateCorrelation(
-                    cpuValues.stream().map(v -> v.getValue() * 100).toList(),
+                    cpuValues.stream().map(MetricValue::getValue).toList(),
                     gcTimeValues.stream().map(MetricValue::getValue).toList()
                 );
-                correlationAnalysis.put("cpu_gc_correlation", 
+                correlationAnalysis.put("cpu_gc_correlation",
                     Math.round(cpuGcCorr * 100.0) / 100.0);
                 
-                // Calculate average GC contribution to CPU
-                double totalCpu = cpuValues.stream()
-                    .mapToDouble(v -> v.getValue() * 100)
+                // Calculate average CPU and GC time
+                double avgCpuCores = cpuValues.stream()
+                    .mapToDouble(MetricValue::getValue)
                     .average()
                     .orElse(0.0);
-                double totalGcTime = gcTimeValues.stream()
+                double avgGcTimePercent = gcTimeValues.stream()
                     .mapToDouble(MetricValue::getValue)
                     .average()
                     .orElse(0.0);
                 
-                if (totalCpu > 0) {
-                    double gcContribution = (totalGcTime / totalCpu) * 100;
-                    correlationAnalysis.put("gc_cpu_contribution_avg_percent", 
-                        Math.round(gcContribution * 10.0) / 10.0);
-                }
+                correlationAnalysis.put("avg_cpu_cores", Math.round(avgCpuCores * 1000.0) / 1000.0);
+                correlationAnalysis.put("avg_gc_time_percent", Math.round(avgGcTimePercent * 10.0) / 10.0);
+                correlationAnalysis.put("note", "CPU in cores, GC time as percentage of total time");
                 
                 result.put("correlation_analysis", correlationAnalysis);
             }

@@ -23,7 +23,20 @@ public class ThreadTools {
     @Inject
     JvmMetricsService metricsService;
     
-    @Tool(description = "Show current thread counts and health")
+    @Tool(description = """
+            Show current thread counts including total, daemon, non-daemon, and peak threads.
+            Provides thread health metrics and peak utilization percentage.
+            
+            No parameters required.
+            
+            Use this tool when:
+            - Investigating thread-related performance issues
+            - Checking for thread leaks (growing thread count)
+            - Monitoring thread pool health
+            - Initial thread health assessment
+            
+            Returns: Current threads, daemon threads, non-daemon threads, peak threads, and peak utilization %.
+            """)
     public Map<String, Object> getThreadState() {
         LOG.info("Executing getThreadState tool");
         
@@ -64,7 +77,22 @@ public class ThreadTools {
         return result;
     }
     
-    @Tool(description = "Show thread count trends to identify leaks or growth")
+    @Tool(description = """
+            Show thread count trends over time to identify thread leaks, growth patterns, or thread pool issues.
+            Provides time-series data with total, daemon, and non-daemon thread counts plus growth rate.
+            
+            Parameters:
+            - lookback: Time window to analyze (e.g., "5m", "1h", "2h", "24h"). Default: "1h"
+            - step: Sampling interval (e.g., "30s", "1m", "5m"). Default: "1m"
+            
+            Use this tool when:
+            - Detecting thread leaks (steadily increasing thread count)
+            - Analyzing thread pool behavior over time
+            - Correlating thread changes with application events
+            - Investigating thread exhaustion issues
+            
+            Returns: Time-series samples with total/daemon/non-daemon counts, min/max/avg statistics, and growth rate per hour.
+            """)
     public Map<String, Object> getThreadActivityOverTime(
             String lookback,
             String step) {

@@ -24,7 +24,21 @@ public class ComparativeTools {
     @Inject
     JvmMetricsService metricsService;
     
-    @Tool(description = "Compare current state to a baseline period")
+    @Tool(description = """
+            Compare current JVM state to a baseline period to identify changes and trends.
+            Compares heap usage, GC frequency, thread count, and CPU usage between two time points.
+            
+            Parameters:
+            - baselineTime: How far back to use as baseline (e.g., "1h", "2h", "24h", "1h ago"). Default: "1h"
+            
+            Use this tool when:
+            - Comparing before/after deployment or configuration change
+            - Identifying what changed since a known good state
+            - Detecting gradual degradation over time
+            - Establishing if metrics are trending up or down
+            
+            Returns: Baseline vs current comparison for heap, GC frequency, threads, CPU with delta values, percentages, and trends.
+            """)
     public Map<String, Object> getCurrentVsBaseline(String baselineTime) {
         LOG.infof("Executing getCurrentVsBaseline tool with baselineTime=%s", baselineTime);
         
@@ -143,7 +157,22 @@ public class ComparativeTools {
         return result;
     }
     
-    @Tool(description = "Show what's normal vs exceptional for metrics using percentile analysis")
+    @Tool(description = """
+            Show what's normal vs exceptional for metrics using percentile analysis (p50, p95, p99).
+            Helps identify if current values are within normal range or outliers.
+            
+            Parameters:
+            - metricCategory: Category to analyze. Options: "memory", "gc", "threads", "cpu". Default: "memory"
+            - lookback: Time window for percentile calculation (e.g., "1h", "24h", "7d"). Default: "24h"
+            
+            Use this tool when:
+            - Determining if current metrics are normal or exceptional
+            - Establishing baseline behavior patterns
+            - Identifying outliers and anomalies
+            - Understanding typical vs peak resource usage
+            
+            Returns: p50/p95/p99 percentiles, current value, and current percentile rank for the selected category.
+            """)
     public Map<String, Object> getMetricPercentiles(
             String metricCategory,
             String lookback) {

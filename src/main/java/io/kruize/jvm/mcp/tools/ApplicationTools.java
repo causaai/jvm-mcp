@@ -23,7 +23,20 @@ public class ApplicationTools {
     @Inject
     JvmMetricsService metricsService;
     
-    @Tool(description = "Show class loading activity")
+    @Tool(description = """
+            Show class loading activity including current loaded classes and 5-minute trends.
+            Helps identify class loader leaks or excessive class loading.
+            
+            No parameters required.
+            
+            Use this tool when:
+            - Investigating metaspace/permgen issues
+            - Detecting class loader leaks
+            - Monitoring dynamic class loading patterns
+            - Analyzing application startup behavior
+            
+            Returns: Current loaded classes, 5m min/max/avg, and growth rate (classes per hour).
+            """)
     public Map<String, Object> getClassLoadingStats() {
         LOG.info("Executing getClassLoadingStats tool");
         
@@ -78,7 +91,21 @@ public class ApplicationTools {
         return result;
     }
     
-    @Tool(description = "Provide JVM configuration context")
+    @Tool(description = """
+            Provide JVM configuration and runtime information including heap config, JVM type, vendor, and version.
+            Essential context for understanding JVM behavior and compatibility.
+            
+            No parameters required.
+            
+            Use this tool when:
+            - Identifying JVM type (OpenJ9 vs HotSpot)
+            - Checking heap configuration (initial/max heap)
+            - Verifying JVM vendor and version
+            - Getting target/instance information
+            - Understanding JVM setup for troubleshooting
+            
+            Returns: Heap config (initial/max in bytes and MB), JVM runtime info (vendor, runtime, version, type), target info (job, instance), data source metadata.
+            """)
     public Map<String, Object> getJvmRuntimeInfo() {
         LOG.info("Executing getJvmRuntimeInfo tool");
         
@@ -98,6 +125,35 @@ public class ApplicationTools {
                 heapConfig.put("max_heap_mb", heapMax.longValue() / (1024 * 1024));
                 
                 result.put("heap_config", heapConfig);
+            }
+            
+            // Get JVM runtime information from jvm_runtime_info metric
+            var runtimeMetrics = metricsService.executeQuery("jvm_runtime_info");
+            if (!runtimeMetrics.isEmpty()) {
+                var runtimeMetric = runtimeMetrics.get(0);
+                Map<String, String> labels = runtimeMetric.getLabels();
+                
+                Map<String, String> jvmInfo = new HashMap<>();
+                jvmInfo.put("runtime", labels.getOrDefault("runtime", "unknown"));
+                jvmInfo.put("vendor", labels.getOrDefault("vendor", "unknown"));
+                jvmInfo.put("version", labels.getOrDefault("version", "unknown"));
+                
+                // Determine JVM type (OpenJ9 or HotSpot)
+                String vendor = labels.getOrDefault("vendor", "");
+                String runtime = labels.getOrDefault("runtime", "");
+                String jvmType = "unknown";
+                
+                if (vendor.contains("OpenJ9") || runtime.contains("OpenJ9")) {
+                    jvmType = "OpenJ9";
+                } else if (vendor.contains("Oracle") || runtime.contains("HotSpot")) {
+                    jvmType = "HotSpot";
+                } else if (vendor.contains("Eclipse")) {
+                    jvmType = "OpenJ9";
+                }
+                
+                jvmInfo.put("jvm_type", jvmType);
+                
+                result.put("jvm_runtime_info", jvmInfo);
             }
             
             // Get target information from 'up' metric

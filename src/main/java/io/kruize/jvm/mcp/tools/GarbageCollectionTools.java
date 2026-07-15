@@ -22,7 +22,20 @@ public class GarbageCollectionTools {
     @Inject
     JvmMetricsService metricsService;
     
-    @Tool(description = "Show current GC activity including collection counts and pause times")
+    @Tool(description = """
+            Show current garbage collection activity with collection counts and pause times per collector.
+            Provides total collections, total GC time, and average pause times for each GC collector.
+            
+            No parameters required.
+            
+            Use this tool when:
+            - Investigating GC-related performance issues
+            - Checking if GC is causing application pauses
+            - Comparing different GC collectors (e.g., global vs scavenge in OpenJ9)
+            - Initial GC health assessment
+            
+            Returns: Per-collector metrics (name, total collections, total time, avg pause ms) and overall summary.
+            """)
     public Map<String, Object> getGcActivity() {
         LOG.info("Executing getGcActivity tool");
         
@@ -95,7 +108,22 @@ public class GarbageCollectionTools {
         return result;
     }
     
-    @Tool(description = "Show GC frequency and pause time trends over a specified time window")
+    @Tool(description = """
+            Show GC frequency (collections per minute) and time overhead trends over a specified window.
+            Provides time-series data to identify GC patterns and spikes.
+            
+            Parameters:
+            - lookback: Time window to analyze (e.g., "5m", "1h", "2h", "24h"). Default: "1h"
+            - step: Sampling interval (e.g., "30s", "1m", "5m"). Default: "1m"
+            
+            Use this tool when:
+            - Analyzing GC frequency patterns over time
+            - Identifying GC storms or spikes
+            - Correlating GC activity with application events
+            - Detecting increasing GC pressure trends
+            
+            Returns: Time-series of GC frequency (per min) and GC time overhead (%) with min/max/avg statistics.
+            """)
     public Map<String, Object> getGcBehaviorOverTime(
             String lookback,
             String step) {
@@ -177,7 +205,21 @@ public class GarbageCollectionTools {
         return result;
     }
     
-    @Tool(description = "Assess if GC is reclaiming memory effectively")
+    @Tool(description = """
+            Assess garbage collection efficiency by analyzing GC overhead, frequency, and heap reclamation rate.
+            Determines if GC is effectively reclaiming memory or struggling.
+            
+            Parameters:
+            - window: Time window for analysis (e.g., "5m", "10m", "30m", "1h"). Default: "5m"
+            
+            Use this tool when:
+            - Determining if GC is keeping up with allocation
+            - Investigating high GC overhead issues
+            - Assessing GC effectiveness before OOM
+            - Evaluating if heap size is appropriate
+            
+            Returns: GC overhead %, collections per minute, heap reclamation analysis (before/after GC, reclamation rate).
+            """)
     public Map<String, Object> getGcEfficiency(String window) {
         LOG.infof("Executing getGcEfficiency tool with window=%s", window);
         

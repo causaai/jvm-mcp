@@ -24,7 +24,23 @@ public class TimeWindowTools {
     @Inject
     JvmMetricsService metricsService;
     
-    @Tool(description = "Get all metrics during a specific incident timeframe")
+    @Tool(description = """
+            Get comprehensive metrics during a specific incident timeframe for root cause analysis.
+            Captures heap, GC, threads, and CPU behavior during the incident window.
+            
+            Parameters:
+            - startTime: Incident start time in ISO 8601 format (e.g., "2024-01-15T10:30:00Z"). Required.
+            - endTime: Incident end time in ISO 8601 format (e.g., "2024-01-15T10:45:00Z"). Required.
+            - step: Sampling interval (e.g., "30s", "1m"). Default: "1m"
+            
+            Use this tool when:
+            - Investigating a specific incident or outage
+            - Analyzing what happened during a known problem window
+            - Correlating multiple metrics during an event
+            - Post-mortem analysis of incidents
+            
+            Returns: Time-series data for heap, GC, threads, CPU during the incident with statistics and change percentages.
+            """)
     public Map<String, Object> getIncidentWindowData(
             String startTime,
             String endTime,
@@ -75,7 +91,22 @@ public class TimeWindowTools {
         return result;
     }
     
-    @Tool(description = "Compare metrics before and after an event (deployment, restart, etc.)")
+    @Tool(description = """
+            Compare metrics before and after an event (deployment, restart, config change) to identify impact.
+            Provides symmetric windows around the event time for fair comparison.
+            
+            Parameters:
+            - eventTime: Event timestamp in ISO 8601 format (e.g., "2024-01-15T10:30:00Z"). Required.
+            - window: Time window before and after event (e.g., "5m", "15m", "1h"). Default: "5m"
+            
+            Use this tool when:
+            - Assessing deployment impact
+            - Comparing before/after JVM restart
+            - Evaluating configuration changes
+            - Determining if an event caused metric changes
+            
+            Returns: Before/after snapshots with heap, GC, threads, CPU metrics, plus calculated deltas and change percentages.
+            """)
     public Map<String, Object> getBeforeAfterSnapshot(
             String eventTime,
             String window) {

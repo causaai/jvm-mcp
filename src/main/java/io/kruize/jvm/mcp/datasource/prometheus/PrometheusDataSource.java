@@ -159,7 +159,7 @@ public class PrometheusDataSource implements JvmDataSource {
         StringBuilder query = new StringBuilder(metricName);
         
         Map<String, String> allLabels = new HashMap<>();
-        allLabels.put("job", prometheusJob);
+//        allLabels.put("job", prometheusJob);
         if (labels != null) {
             allLabels.putAll(labels);
         }

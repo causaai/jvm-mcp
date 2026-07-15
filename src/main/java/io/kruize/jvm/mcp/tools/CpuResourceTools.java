@@ -14,6 +14,9 @@ import java.util.Map;
 
 /**
  * MCP Tools for CPU & Resource Investigation
+ * 
+ * Note: Uses process_cpu_seconds_total (rate) instead of jvm_process_cpu_load
+ * for compatibility with OpenJ9 JVM which doesn't export standard CPU metrics
  */
 @ApplicationScoped
 public class CpuResourceTools {
@@ -23,7 +26,21 @@ public class CpuResourceTools {
     @Inject
     JvmMetricsService metricsService;
     
-    @Tool(description = "Show JVM and system CPU consumption")
+    @Tool(description = """
+            Show JVM CPU consumption using process metrics (OpenJ9 compatible).
+            Returns CPU usage in cores (1.0 = 1 full CPU core) with 5-minute averages.
+            
+            No parameters required.
+            
+            Use this tool when:
+            - Investigating high CPU usage issues
+            - Checking if JVM is CPU-bound
+            - Monitoring CPU consumption trends
+            - Initial CPU health assessment
+            
+            Note: Uses process_cpu_seconds_total rate for OpenJ9 compatibility.
+            Returns: Current CPU cores, 5m avg/max/min CPU cores. Multiply by 100 for percentage on single-core systems.
+            """)
     public Map<String, Object> getCpuUsage() {
         LOG.info("Executing getCpuUsage tool");
         
@@ -31,44 +48,34 @@ public class CpuResourceTools {
         result.put("timestamp", Instant.now().toString());
         
         try {
-            // Get current CPU metrics (values are 0.0-1.0, convert to percentage)
-            Double processCpu = metricsService.getCurrentMetricValue("jvm_process_cpu_load");
-            Double systemCpu = metricsService.getCurrentMetricValue("jvm_system_cpu_load");
+            // Get current CPU rate (1-minute rate of CPU seconds)
+            // This is compatible with OpenJ9 which exports process_cpu_seconds_total
+            Double processCpuRate = metricsService.getCurrentMetricValue("rate(process_cpu_seconds_total[1m])");
             
-            if (processCpu == null || systemCpu == null) {
+            if (processCpuRate == null) {
                 result.put("error", "Unable to fetch CPU metrics from data source");
+                result.put("note", "Ensure process_cpu_seconds_total metric is available");
                 return result;
             }
             
-            double processCpuPercent = processCpu * 100;
-            double systemCpuPercent = systemCpu * 100;
-            
-            result.put("process_cpu_percent", Math.round(processCpuPercent * 10.0) / 10.0);
-            result.put("system_cpu_percent", Math.round(systemCpuPercent * 10.0) / 10.0);
-            
-            if (systemCpuPercent > 0) {
-                double processShare = (processCpuPercent / systemCpuPercent) * 100;
-                result.put("process_cpu_share_of_system", Math.round(processShare * 10.0) / 10.0);
-            }
+            // CPU rate is in cores (1.0 = 1 full CPU core)
+            result.put("process_cpu_cores", Math.round(processCpuRate * 1000.0) / 1000.0);
+            result.put("note", "CPU usage in cores (1.0 = 1 full CPU core). For percentage on single-core, multiply by 100.");
             
             // Get 5-minute averages
             List<MetricValue> processValues = metricsService.getMetricRange(
-                "jvm_process_cpu_load", "5m", "30s");
-            List<MetricValue> systemValues = metricsService.getMetricRange(
-                "jvm_system_cpu_load", "5m", "30s");
+                "rate(process_cpu_seconds_total[1m])", "5m", "30s");
             
-            if (!processValues.isEmpty() && !systemValues.isEmpty()) {
+            if (!processValues.isEmpty()) {
                 Map<String, Object> recent5m = new HashMap<>();
                 
                 Map<String, Double> processStats = metricsService.calculateStatistics(processValues);
-                recent5m.put("avg_process_cpu_percent", 
-                    Math.round(processStats.get("avg") * 100 * 10.0) / 10.0);
-                recent5m.put("max_process_cpu_percent", 
-                    Math.round(processStats.get("max") * 100 * 10.0) / 10.0);
-                
-                Map<String, Double> systemStats = metricsService.calculateStatistics(systemValues);
-                recent5m.put("avg_system_cpu_percent", 
-                    Math.round(systemStats.get("avg") * 100 * 10.0) / 10.0);
+                recent5m.put("avg_cpu_cores", 
+                    Math.round(processStats.get("avg") * 1000.0) / 1000.0);
+                recent5m.put("max_cpu_cores", 
+                    Math.round(processStats.get("max") * 1000.0) / 1000.0);
+                recent5m.put("min_cpu_cores", 
+                    Math.round(processStats.get("min") * 1000.0) / 1000.0);
                 
                 result.put("recent_5m", recent5m);
             }
@@ -81,7 +88,20 @@ public class CpuResourceTools {
         return result;
     }
     
-    @Tool(description = "Show host-level memory availability")
+    @Tool(description = """
+            Show process-level resource usage including resident/virtual memory and file descriptors (OpenJ9 compatible).
+            Provides system resource metrics beyond JVM heap.
+            
+            No parameters required.
+            
+            Use this tool when:
+            - Investigating native memory issues
+            - Checking file descriptor exhaustion
+            - Monitoring process memory vs heap memory
+            - Analyzing off-heap memory usage
+            
+            Returns: Resident memory (physical RAM), virtual memory (address space), file descriptors (open/max/utilization).
+            """)
     public Map<String, Object> getSystemResources() {
         LOG.info("Executing getSystemResources tool");
         
@@ -89,30 +109,34 @@ public class CpuResourceTools {
         result.put("timestamp", Instant.now().toString());
         
         try {
-            // Get system memory metrics
-            Double totalMemory = metricsService.getCurrentMetricValue("jvm_os_total_physical_memory_bytes");
-            Double freeMemory = metricsService.getCurrentMetricValue("jvm_os_free_physical_memory_bytes");
+            // Get process memory metrics (available in OpenJ9)
+            Double residentMemory = metricsService.getCurrentMetricValue("process_resident_memory_bytes");
+            Double virtualMemory = metricsService.getCurrentMetricValue("process_virtual_memory_bytes");
             
-            if (totalMemory == null || freeMemory == null) {
-                result.put("error", "Unable to fetch system resource metrics from data source");
+            // Get file descriptors
+            Double openFds = metricsService.getCurrentMetricValue("process_open_fds");
+            Double maxFds = metricsService.getCurrentMetricValue("process_max_fds");
+            
+            if (residentMemory == null || virtualMemory == null) {
+                result.put("error", "Unable to fetch process resource metrics from data source");
                 return result;
             }
             
-            long total = totalMemory.longValue();
-            long free = freeMemory.longValue();
-            long used = total - free;
+            Map<String, Object> processMemory = new HashMap<>();
+            processMemory.put("resident_bytes", residentMemory.longValue());
+            processMemory.put("virtual_bytes", virtualMemory.longValue());
+            processMemory.put("note", "Resident = physical RAM used, Virtual = total address space");
             
-            Map<String, Object> physicalMemory = new HashMap<>();
-            physicalMemory.put("total_bytes", total);
-            physicalMemory.put("free_bytes", free);
-            physicalMemory.put("used_bytes", used);
+            result.put("process_memory", processMemory);
             
-            if (total > 0) {
-                double utilization = (used * 100.0) / total;
-                physicalMemory.put("utilization_percent", Math.round(utilization * 10.0) / 10.0);
+            if (openFds != null && maxFds != null) {
+                Map<String, Object> fileDescriptors = new HashMap<>();
+                fileDescriptors.put("open", openFds.intValue());
+                fileDescriptors.put("max", maxFds.intValue());
+                fileDescriptors.put("utilization_percent", 
+                    Math.round((openFds / maxFds) * 100 * 10.0) / 10.0);
+                result.put("file_descriptors", fileDescriptors);
             }
-            
-            result.put("physical_memory", physicalMemory);
             
         } catch (Exception e) {
             LOG.error("Error in getSystemResources", e);
@@ -122,7 +146,22 @@ public class CpuResourceTools {
         return result;
     }
     
-    @Tool(description = "Show CPU and system memory trends over time")
+    @Tool(description = """
+            Show CPU cores, resident memory, and file descriptor trends over time (OpenJ9 compatible).
+            Provides time-series data for resource usage pattern analysis.
+            
+            Parameters:
+            - lookback: Time window to analyze (e.g., "5m", "1h", "2h", "24h"). Default: "1h"
+            - step: Sampling interval (e.g., "30s", "1m", "5m"). Default: "1m"
+            
+            Use this tool when:
+            - Analyzing CPU usage patterns over time
+            - Detecting CPU spikes or sustained high usage
+            - Monitoring native memory growth
+            - Tracking file descriptor leaks
+            
+            Returns: Time-series of CPU cores, resident memory bytes, and file descriptor counts.
+            """)
     public Map<String, Object> getResourceUsageOverTime(
             String lookback,
             String step) {
@@ -145,48 +184,56 @@ public class CpuResourceTools {
             Instant end = Instant.now();
             result.put("end_time", end.toString());
             
-            // Get CPU usage over time
-            List<MetricValue> processCpuValues = metricsService.getMetricRange(
-                "jvm_process_cpu_load", lookback, step);
-            List<MetricValue> systemCpuValues = metricsService.getMetricRange(
-                "jvm_system_cpu_load", lookback, step);
+            // Get CPU rate over time (1-minute rate)
+            List<MetricValue> cpuValues = metricsService.getMetricRange(
+                "rate(process_cpu_seconds_total[1m])", lookback, step);
             
-            if (!processCpuValues.isEmpty() && !systemCpuValues.isEmpty()) {
+            if (!cpuValues.isEmpty()) {
                 Map<String, Object> cpu = new HashMap<>();
                 
-                cpu.put("process_samples", processCpuValues.stream()
+                cpu.put("samples", cpuValues.stream()
                     .map(v -> Map.of(
                         "timestamp", v.getTimestamp().toString(),
-                        "percent", Math.round(v.getValue() * 100 * 10.0) / 10.0
+                        "cores", Math.round(v.getValue() * 1000.0) / 1000.0
                     ))
                     .toList());
                 
-                cpu.put("system_samples", systemCpuValues.stream()
-                    .map(v -> Map.of(
-                        "timestamp", v.getTimestamp().toString(),
-                        "percent", Math.round(v.getValue() * 100 * 10.0) / 10.0
-                    ))
-                    .toList());
-                
-                result.put("cpu", cpu);
-                result.put("start_time", processCpuValues.get(0).getTimestamp().toString());
+                result.put("cpu_cores", cpu);
+                result.put("start_time", cpuValues.get(0).getTimestamp().toString());
             }
             
-            // Get system memory over time
-            List<MetricValue> freeMemoryValues = metricsService.getMetricRange(
-                "jvm_os_free_physical_memory_bytes", lookback, step);
+            // Get resident memory over time
+            List<MetricValue> residentMemoryValues = metricsService.getMetricRange(
+                "process_resident_memory_bytes", lookback, step);
             
-            if (!freeMemoryValues.isEmpty()) {
-                Map<String, Object> systemMemory = new HashMap<>();
+            if (!residentMemoryValues.isEmpty()) {
+                Map<String, Object> memory = new HashMap<>();
                 
-                systemMemory.put("free_memory_samples", freeMemoryValues.stream()
+                memory.put("samples", residentMemoryValues.stream()
                     .map(v -> Map.of(
                         "timestamp", v.getTimestamp().toString(),
                         "bytes", v.getValue().longValue()
                     ))
                     .toList());
                 
-                result.put("system_memory", systemMemory);
+                result.put("resident_memory", memory);
+            }
+            
+            // Get file descriptors over time
+            List<MetricValue> fdValues = metricsService.getMetricRange(
+                "process_open_fds", lookback, step);
+            
+            if (!fdValues.isEmpty()) {
+                Map<String, Object> fds = new HashMap<>();
+                
+                fds.put("samples", fdValues.stream()
+                    .map(v -> Map.of(
+                        "timestamp", v.getTimestamp().toString(),
+                        "count", v.getValue().intValue()
+                    ))
+                    .toList());
+                
+                result.put("file_descriptors", fds);
             }
             
         } catch (Exception e) {
@@ -198,3 +245,4 @@ public class CpuResourceTools {
     }
 }
 
+// Made with Bob

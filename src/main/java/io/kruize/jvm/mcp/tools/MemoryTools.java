@@ -23,7 +23,20 @@ public class MemoryTools {
     @Inject
     JvmMetricsService metricsService;
     
-    @Tool(description = "Get current heap memory status including utilization and recent trends")
+    @Tool(description = """
+            Get current heap memory status with utilization metrics and 5-minute trends.
+            Returns heap used/max/committed bytes, utilization percentage, and growth rate.
+            
+            No parameters required.
+            
+            Use this tool when:
+            - Checking current memory pressure
+            - Investigating OOM (Out of Memory) issues
+            - Monitoring heap utilization trends
+            - Initial memory health assessment
+            
+            Returns: Current heap metrics, utilization %, available bytes, and 5m trend analysis.
+            """)
     public Map<String, Object> getHeapStatus() {
         LOG.info("Executing getHeapStatus tool");
         
@@ -78,7 +91,20 @@ public class MemoryTools {
         return result;
     }
     
-    @Tool(description = "Get detailed breakdown of memory pools showing which specific pools are under pressure")
+    @Tool(description = """
+            Get detailed breakdown of all JVM memory pools (heap and non-heap) with utilization metrics.
+            Shows which specific pools are under pressure. Supports OpenJ9 pools (nursery, tenured-SOA/LOA).
+            
+            No parameters required.
+            
+            Use this tool when:
+            - Identifying which memory pool is causing issues
+            - Investigating metaspace/code cache problems
+            - Analyzing OpenJ9 memory pool distribution
+            - Determining if specific generation is full
+            
+            Returns: List of all pools with used/max/committed bytes, utilization %, and pool type (heap/non-heap).
+            """)
     public Map<String, Object> getMemoryPoolsBreakdown() {
         LOG.info("Executing getMemoryPoolsBreakdown tool");
         
@@ -157,7 +183,22 @@ public class MemoryTools {
         return result;
     }
     
-    @Tool(description = "Show memory behavior trends over a specified time window")
+    @Tool(description = """
+            Show heap and non-heap memory usage trends over a specified time window with statistics.
+            Provides time-series data for trend analysis and pattern identification.
+            
+            Parameters:
+            - lookback: Time window to analyze (e.g., "5m", "1h", "2h", "24h"). Default: "1h"
+            - step: Sampling interval (e.g., "30s", "1m", "5m"). Default: "1m"
+            
+            Use this tool when:
+            - Analyzing memory growth patterns over time
+            - Identifying memory spikes or drops
+            - Correlating memory changes with events
+            - Detecting gradual memory leaks
+            
+            Returns: Time-series samples with timestamps, min/max/avg statistics for heap and non-heap.
+            """)
     public Map<String, Object> getMemoryOverTime(
             String lookback,
             String step) {
