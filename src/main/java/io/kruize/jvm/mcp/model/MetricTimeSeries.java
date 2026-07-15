@@ -5,19 +5,20 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 
 /**
- * Represents a single metric value at a specific timestamp
+ * Represents a time series of metric values with labels
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class MetricValue {
-    private Instant timestamp;
-    private Double value;
+public class MetricTimeSeries {
     private String metricName;
+    private Map<String, String> labels;
+    private List<MetricValue> values;
 }
 
 
