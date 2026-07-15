@@ -36,9 +36,6 @@ public class ContextTools {
     @Inject
     ApplicationTools applicationTools;
     
-    @Inject
-    AlertTools alertTools;
-    
     @Tool(description = "Provide complete current state + recent trends in one call")
     public Map<String, Object> getJvmHealthContext() {
         LOG.info("Executing getJvmHealthContext tool");
@@ -126,12 +123,6 @@ public class ContextTools {
             recentTrends.put("cpu_trend", "stable");
             
             result.put("recent_trends_5m", recentTrends);
-            
-            // Active alerts
-            Map<String, Object> alerts = alertTools.getCurrentAlerts();
-            if (!alerts.containsKey("error")) {
-                result.put("active_alerts", alerts.get("active_alerts"));
-            }
             
             // Health indicators
             Map<String, String> healthIndicators = new HashMap<>();
@@ -258,10 +249,6 @@ public class ContextTools {
         correlationTools.metricsService = this.metricsService;
         correlations.put("memory_gc", correlationTools.getMemoryGcCorrelation(lookback, "1m"));
         result.put("correlations", correlations);
-        
-        // Alerts
-        Map<String, Object> alerts = alertTools.getCurrentAlerts();
-        result.put("alerts", Map.of("memory_related_alerts", alerts.get("active_alerts")));
     }
     
     private void investigateGc(Map<String, Object> result, String lookback) {

@@ -165,37 +165,31 @@ docker run -p 8080:8080 \
 12. **getClassLoadingStats** - Show class loading activity
 13. **getJvmRuntimeInfo** - Provide JVM configuration context
 
-### Alert & Incident Context Tools
-
-14. **getCurrentAlerts** - Show what monitoring systems think is wrong
-15. **getRecentAlertHistory** - Show alert patterns over time
-    - Parameters: `lookback`
-
 ### Comparative Analysis Tools
 
-16. **getCurrentVsBaseline** - Compare current state to a baseline period
+14. **getCurrentVsBaseline** - Compare current state to a baseline period
     - Parameters: `baseline_time`
-17. **getMetricPercentiles** - Show what's normal vs exceptional for metrics
+15. **getMetricPercentiles** - Show what's normal vs exceptional for metrics
     - Parameters: `metric_category`, `lookback`
 
 ### Time-Window Investigation Tools
 
-18. **getIncidentWindowData** - Get all metrics during a specific incident timeframe
+16. **getIncidentWindowData** - Get all metrics during a specific incident timeframe
     - Parameters: `start_time`, `end_time`, `step`
-19. **getBeforeAfterSnapshot** - Compare metrics before and after an event
+17. **getBeforeAfterSnapshot** - Compare metrics before and after an event
     - Parameters: `event_time`, `window`
 
 ### Correlation Data Tools
 
-20. **getMemoryGcCorrelation** - Show synchronized heap usage and GC activity
+18. **getMemoryGcCorrelation** - Show synchronized heap usage and GC activity
     - Parameters: `lookback`, `step`
-21. **getCpuGcCorrelation** - Show if GC is consuming CPU resources
+19. **getCpuGcCorrelation** - Show if GC is consuming CPU resources
     - Parameters: `lookback`, `step`
 
 ### Comprehensive Context Tools
 
-22. **getJvmHealthContext** - Provide complete current state + recent trends in one call
-23. **getInvestigationBundle** - Deep dive into one specific area with all related data
+20. **getJvmHealthContext** - Provide complete current state + recent trends in one call
+21. **getInvestigationBundle** - Deep dive into one specific area with all related data
     - Parameters: `focus_area` (memory/gc/threads/cpu), `lookback`
 
 ## Metrics Supported
