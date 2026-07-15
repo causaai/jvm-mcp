@@ -3,15 +3,15 @@ package io.kruize.jvm.mcp.datasource.prometheus.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 
+import java.util.List;
+
 /**
- * Prometheus API response wrapper
+ * Prometheus data section of the response
  */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class PrometheusResponse {
-    private String status;
-    private PrometheusData data;
-    private String errorType;
-    private String error;
+public class PrometheusData {
+    private String resultType;
+    private List<PrometheusResult> result;
 }
 
