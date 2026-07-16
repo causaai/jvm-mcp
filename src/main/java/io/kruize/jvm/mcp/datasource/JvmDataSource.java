@@ -42,6 +42,16 @@ public interface JvmDataSource {
     List<MetricTimeSeries> executeQuery(String query);
     
     /**
+     * Execute a range query with custom PromQL over a time range
+     * @param query The query string
+     * @param start Start time
+     * @param end End time
+     * @param step Sample interval (e.g., "1m")
+     * @return List of time series results
+     */
+    List<MetricTimeSeries> executeRangeQuery(String query, Instant start, Instant end, String step);
+    
+    /**
      * Execute a query at a specific timestamp
      * @param query The query string
      * @param timestamp The timestamp to query at

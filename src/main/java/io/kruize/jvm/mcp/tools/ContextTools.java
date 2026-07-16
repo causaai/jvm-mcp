@@ -67,29 +67,29 @@ public class ContextTools {
             // GC activity
             Map<String, Object> gcActivity = gcTools.getGcActivity();
             if (!gcActivity.containsKey("error")) {
-                currentState.put("gc", Map.of(
-                    "collectors", gcActivity.get("collectors"),
-                    "summary", gcActivity.get("summary")
-                ));
+                Map<String, Object> gcData = new HashMap<>();
+                gcData.put("collectors", gcActivity.get("collectors"));
+                gcData.put("summary", gcActivity.get("summary"));
+                currentState.put("gc", gcData);
             }
             
             // Thread state
             Map<String, Object> threadState = threadTools.getThreadState();
             if (!threadState.containsKey("error")) {
-                currentState.put("threads", Map.of(
-                    "current_threads", threadState.get("current_threads"),
-                    "daemon_threads", threadState.get("daemon_threads"),
-                    "peak_threads", threadState.get("peak_threads")
-                ));
+                Map<String, Object> threadData = new HashMap<>();
+                threadData.put("current_threads", threadState.get("current_threads"));
+                threadData.put("daemon_threads", threadState.get("daemon_threads"));
+                threadData.put("peak_threads", threadState.get("peak_threads"));
+                currentState.put("threads", threadData);
             }
             
             // CPU usage
             Map<String, Object> cpuUsage = cpuResourceTools.getCpuUsage();
             if (!cpuUsage.containsKey("error")) {
-                currentState.put("cpu", Map.of(
-                    "process_cpu_percent", cpuUsage.get("process_cpu_percent"),
-                    "system_cpu_percent", cpuUsage.get("system_cpu_percent")
-                ));
+                Map<String, Object> cpuData = new HashMap<>();
+                cpuData.put("process_cpu_percent", cpuUsage.get("process_cpu_percent"));
+                cpuData.put("system_cpu_percent", cpuUsage.get("system_cpu_percent"));
+                currentState.put("cpu", cpuData);
             }
             
             // System resources
@@ -101,9 +101,9 @@ public class ContextTools {
             // Class loading
             Map<String, Object> classLoading = applicationTools.getClassLoadingStats();
             if (!classLoading.containsKey("error")) {
-                currentState.put("classes", Map.of(
-                    "loaded_classes", classLoading.get("loaded_classes")
-                ));
+                Map<String, Object> classData = new HashMap<>();
+                classData.put("loaded_classes", classLoading.get("loaded_classes"));
+                currentState.put("classes", classData);
             }
             
             result.put("current_state", currentState);
@@ -121,10 +121,12 @@ public class ContextTools {
             
             // GC frequency trend
             Map<String, Object> gcEfficiency = gcTools.getGcEfficiency("5m");
-            if (!gcEfficiency.containsKey("error")) {
+            if (!gcEfficiency.containsKey("error") && gcEfficiency.get("collections_per_minute") != null) {
                 double gcFreq = (Double) gcEfficiency.get("collections_per_minute");
-                recentTrends.put("gc_frequency_trend", 
+                recentTrends.put("gc_frequency_trend",
                     gcFreq > 3.0 ? "increasing" : gcFreq < 1.0 ? "decreasing" : "stable");
+            } else {
+                recentTrends.put("gc_frequency_trend", "unknown");
             }
             
             // Thread count trend
@@ -156,7 +158,7 @@ public class ContextTools {
             }
             
             // GC pressure
-            if (gcEfficiency.containsKey("gc_overhead_percent")) {
+            if (gcEfficiency.containsKey("gc_overhead_percent") && gcEfficiency.get("gc_overhead_percent") != null) {
                 double gcOverhead = (Double) gcEfficiency.get("gc_overhead_percent");
                 
                 if (gcOverhead > 10) {
@@ -166,13 +168,15 @@ public class ContextTools {
                 } else {
                     healthIndicators.put("gc_pressure", "low");
                 }
+            } else {
+                healthIndicators.put("gc_pressure", "unknown");
             }
             
             // Thread health
             healthIndicators.put("thread_health", "healthy");
             
             // CPU health
-            if (cpuUsage.containsKey("process_cpu_percent")) {
+            if (cpuUsage.containsKey("process_cpu_percent") && cpuUsage.get("process_cpu_percent") != null) {
                 double cpuPercent = (Double) cpuUsage.get("process_cpu_percent");
                 
                 if (cpuPercent > 80) {
@@ -182,6 +186,8 @@ public class ContextTools {
                 } else {
                     healthIndicators.put("cpu_health", "healthy");
                 }
+            } else {
+                healthIndicators.put("cpu_health", "unknown");
             }
             
             result.put("health_indicators", healthIndicators);

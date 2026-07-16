@@ -45,7 +45,7 @@ public class ApplicationTools {
         
         try {
             // Get current class loading metrics
-            Double loadedClasses = metricsService.getCurrentMetricValue("jvm_classes_loaded");
+            Double loadedClasses = metricsService.getCurrentMetricValue("jvm_classes_currently_loaded");
             
             if (loadedClasses == null) {
                 result.put("error", "Unable to fetch class loading metrics from data source");
@@ -56,7 +56,7 @@ public class ApplicationTools {
             
             // Get 5-minute trend
             List<MetricValue> recentValues = metricsService.getMetricRange(
-                "jvm_classes_loaded", "5m", "30s");
+                "jvm_classes_currently_loaded", "5m", "30s");
             
             if (!recentValues.isEmpty()) {
                 Map<String, Object> recent5m = new HashMap<>();

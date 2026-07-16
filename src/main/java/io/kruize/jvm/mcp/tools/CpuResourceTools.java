@@ -50,17 +50,23 @@ public class CpuResourceTools {
         try {
             // Get current CPU rate (1-minute rate of CPU seconds)
             // This is compatible with OpenJ9 which exports process_cpu_seconds_total
-            Double processCpuRate = metricsService.getCurrentMetricValue("rate(process_cpu_seconds_total[1m])");
+            List<io.kruize.jvm.mcp.model.MetricTimeSeries> cpuData =
+                metricsService.executeQuery("rate(process_cpu_seconds_total[1m])");
             
-            if (processCpuRate == null) {
+            if (cpuData.isEmpty() || cpuData.get(0).getValues().isEmpty()) {
                 result.put("error", "Unable to fetch CPU metrics from data source");
                 result.put("note", "Ensure process_cpu_seconds_total metric is available");
                 return result;
             }
             
+            double processCpuRate = cpuData.get(0).getValues().get(0).getValue();
+            
             // CPU rate is in cores (1.0 = 1 full CPU core)
+            // Convert to percentage (assuming single core for compatibility)
             result.put("process_cpu_cores", Math.round(processCpuRate * 1000.0) / 1000.0);
-            result.put("note", "CPU usage in cores (1.0 = 1 full CPU core). For percentage on single-core, multiply by 100.");
+            result.put("process_cpu_percent", Math.round(processCpuRate * 100.0 * 10.0) / 10.0);
+            result.put("system_cpu_percent", null); // Not available from process metrics
+            result.put("note", "CPU usage in cores (1.0 = 1 full CPU core). Percentage assumes single-core system.");
             
             // Get 5-minute averages
             List<MetricValue> processValues = metricsService.getMetricRange(

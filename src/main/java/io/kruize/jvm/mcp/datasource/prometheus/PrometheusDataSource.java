@@ -104,6 +104,31 @@ public class PrometheusDataSource implements JvmDataSource {
     }
     
     @Override
+    public List<MetricTimeSeries> executeRangeQuery(String query, Instant start, Instant end, String step) {
+        try {
+            String startStr = String.valueOf(start.getEpochSecond());
+            String endStr = String.valueOf(end.getEpochSecond());
+            
+            PrometheusResponse response = prometheusClient.queryRange(query, startStr, endStr, step);
+            
+            if (response == null || response.getData() == null ||
+                response.getData().getResult() == null) {
+                LOG.warnf("No data returned for range query: %s", query);
+                return Collections.emptyList();
+            }
+            
+            return response.getData().getResult().stream()
+                .map(result -> parseRangeValues(result, extractMetricName(result)))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+                
+        } catch (Exception e) {
+            LOG.errorf(e, "Error executing range query: %s", query);
+            return Collections.emptyList();
+        }
+    }
+    
+    @Override
     public List<MetricValue> executeQueryAtTime(String query, Instant timestamp) {
         try {
             String timeStr = String.valueOf(timestamp.getEpochSecond());

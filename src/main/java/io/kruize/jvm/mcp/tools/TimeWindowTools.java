@@ -303,11 +303,14 @@ public class TimeWindowTools {
     
     private void analyzeWindowMetrics(Map<String, Object> window, Instant start, Instant end) {
         try {
-            String lookback = Duration.between(start, end).toMinutes() + "m";
+            // Calculate duration for the window
+            long durationMinutes = Duration.between(start, end).toMinutes();
+            String step = durationMinutes > 60 ? "5m" : "1m";
             
-            // Heap usage
-            List<MetricValue> heapValues = metricsService.getMetricRange(
-                "jvm_memory_heap_used_bytes", lookback, "1m");
+            // Heap usage - use explicit time range
+            List<MetricValue> heapValues = metricsService.getMetricRangeWithTimes(
+                "jvm_memory_heap_used_bytes", start, end, step);
+            
             if (!heapValues.isEmpty()) {
                 Map<String, Double> heapStats = metricsService.calculateStatistics(heapValues);
                 Map<String, Object> heapUsage = new HashMap<>();
@@ -317,27 +320,36 @@ public class TimeWindowTools {
                 window.put("heap_usage_bytes", heapUsage);
             }
             
-            // GC collections per minute
-            String gcQuery = "rate(jvm_gc_collection_seconds_count[1m]) * 60";
-            // Simplified: use current value as approximation
-            Double gcFreq = metricsService.getCurrentMetricValue("jvm_gc_collection_seconds_count");
-            if (gcFreq != null) {
-                window.put("gc_collections_per_min", Math.round(gcFreq * 10.0) / 10.0);
+            // GC collections - get count at start and end of window to calculate rate
+            List<MetricValue> gcCountAtStart = metricsService.executeQueryAtTime(
+                "jvm_gc_collection_seconds_count", start);
+            List<MetricValue> gcCountAtEnd = metricsService.executeQueryAtTime(
+                "jvm_gc_collection_seconds_count", end);
+            
+            if (!gcCountAtStart.isEmpty() && !gcCountAtEnd.isEmpty()) {
+                double startCount = gcCountAtStart.get(0).getValue();
+                double endCount = gcCountAtEnd.get(0).getValue();
+                double collections = endCount - startCount;
+                double collectionsPerMin = (collections / durationMinutes);
+                window.put("gc_collections_per_min", Math.round(collectionsPerMin * 10.0) / 10.0);
             }
             
-            // Thread count
-            List<MetricValue> threadValues = metricsService.getMetricRange(
-                "jvm_threads_current", lookback, "1m");
+            // Thread count - use explicit time range
+            List<MetricValue> threadValues = metricsService.getMetricRangeWithTimes(
+                "jvm_threads_current", start, end, step);
+            
             if (!threadValues.isEmpty()) {
                 Map<String, Double> threadStats = metricsService.calculateStatistics(threadValues);
                 window.put("thread_count", threadStats.get("avg").longValue());
             }
             
-            // CPU percent
-            List<MetricValue> cpuValues = metricsService.getMetricRange(
-                "jvm_process_cpu_load", lookback, "1m");
+            // CPU percent - use explicit time range (use process_cpu_seconds_total for OpenJ9)
+            List<MetricValue> cpuValues = metricsService.getMetricRangeWithTimes(
+                "rate(process_cpu_seconds_total[1m])", start, end, step);
+            
             if (!cpuValues.isEmpty()) {
                 Map<String, Double> cpuStats = metricsService.calculateStatistics(cpuValues);
+                // Convert cores to percentage (assuming single core for simplicity, multiply by 100)
                 window.put("cpu_percent", Math.round(cpuStats.get("avg") * 100 * 10.0) / 10.0);
             }
             

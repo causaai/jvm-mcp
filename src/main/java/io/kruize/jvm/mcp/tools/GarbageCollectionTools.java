@@ -146,9 +146,10 @@ public class GarbageCollectionTools {
             Instant end = Instant.now();
             result.put("end_time", end.toString());
             
-            // Query GC frequency (collections per minute)
-            String frequencyQuery = String.format("rate(jvm_gc_collection_seconds_count[%s]) * 60", step);
-            List<MetricTimeSeries> frequencyData = metricsService.executeQuery(frequencyQuery);
+            // Query GC frequency (collections per minute) over the time range
+            // Use a fixed 5m window for rate calculation regardless of step size
+            String frequencyQuery = "rate(jvm_gc_collection_seconds_count[5m]) * 60";
+            List<MetricTimeSeries> frequencyData = metricsService.executeRangeQuery(frequencyQuery, lookback, step);
             
             if (!frequencyData.isEmpty()) {
                 List<MetricValue> frequencyValues = frequencyData.get(0).getValues();
@@ -172,9 +173,10 @@ public class GarbageCollectionTools {
                 result.put("start_time", frequencyValues.get(0).getTimestamp().toString());
             }
             
-            // Query GC time overhead (percentage)
-            String overheadQuery = String.format("rate(jvm_gc_collection_seconds_sum[%s]) * 100", step);
-            List<MetricTimeSeries> overheadData = metricsService.executeQuery(overheadQuery);
+            // Query GC time overhead (percentage) over the time range
+            // Use a fixed 5m window for rate calculation regardless of step size
+            String overheadQuery = "rate(jvm_gc_collection_seconds_sum[5m]) * 100";
+            List<MetricTimeSeries> overheadData = metricsService.executeRangeQuery(overheadQuery, lookback, step);
             
             if (!overheadData.isEmpty()) {
                 List<MetricValue> overheadValues = overheadData.get(0).getValues();
@@ -240,6 +242,9 @@ public class GarbageCollectionTools {
             if (!overheadData.isEmpty() && !overheadData.get(0).getValues().isEmpty()) {
                 double gcOverhead = overheadData.get(0).getValues().get(0).getValue();
                 result.put("gc_overhead_percent", Math.round(gcOverhead * 10.0) / 10.0);
+            } else {
+                // No data available (sparse scrapes or no GC activity)
+                result.put("gc_overhead_percent", 0.0);
             }
             
             // Collections per minute
@@ -249,6 +254,9 @@ public class GarbageCollectionTools {
             if (!frequencyData.isEmpty() && !frequencyData.get(0).getValues().isEmpty()) {
                 double collectionsPerMin = frequencyData.get(0).getValues().get(0).getValue();
                 result.put("collections_per_minute", Math.round(collectionsPerMin * 10.0) / 10.0);
+            } else {
+                // No data available (sparse scrapes or no GC activity)
+                result.put("collections_per_minute", 0.0);
             }
             
             // Heap reclamation analysis

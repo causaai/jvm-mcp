@@ -40,7 +40,7 @@ public class JvmMetricsService {
     }
     
     /**
-     * Get metric values over a time range
+     * Get metric values over a time range (from now - lookback to now)
      */
     public List<MetricValue> getMetricRange(String metricName, String lookback, String step) {
         Instant end = Instant.now();
@@ -51,10 +51,27 @@ public class JvmMetricsService {
     }
     
     /**
-     * Execute a PromQL query
+     * Get metric values over a specific time range with explicit start and end times
+     */
+    public List<MetricValue> getMetricRangeWithTimes(String metricName, Instant start, Instant end, String step) {
+        MetricTimeSeries series = dataSource.getRangeValues(metricName, null, start, end, step);
+        return series != null ? series.getValues() : Collections.emptyList();
+    }
+    
+    /**
+     * Execute a PromQL query (instant query)
      */
     public List<MetricTimeSeries> executeQuery(String query) {
         return dataSource.executeQuery(query);
+    }
+    
+    /**
+     * Execute a PromQL range query over a time window
+     */
+    public List<MetricTimeSeries> executeRangeQuery(String query, String lookback, String step) {
+        Instant end = Instant.now();
+        Instant start = end.minus(parseDuration(lookback));
+        return dataSource.executeRangeQuery(query, start, end, step);
     }
     
     /**
