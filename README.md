@@ -30,8 +30,8 @@ This MCP server exposes specialized tools that enable AI agents to investigate J
 
 ```bash
 # Clone the repository
-git clone https://github.com/causaai/jmx-mcp.git
-cd jmx-mcp
+git clone https://github.com/causaai/jvm-mcp.git
+cd jvm-mcp
 
 # Build the project
 ./mvnw clean package -DskipTests
@@ -162,20 +162,20 @@ java -jar target/quarkus-app/quarkus-run.jar
 ./mvnw clean package -Pnative
 
 # Run native executable
-./target/jvm-jmx-mcp-1.0.0-SNAPSHOT-runner
+./target/jvm-mcp-1.0.0-SNAPSHOT-runner
 ```
 
 ### Docker Build
 
 ```bash
 # Build JVM image
-docker build -f src/main/docker/Dockerfile.jvm -t jvm-jmx-mcp:latest .
+docker build -f src/main/docker/Dockerfile.jvm -t jvm-mcp:latest .
 
 # Run container
 docker run -p 8088:8088 \
   -e PROMETHEUS_URL=http://prometheus:9090 \
   -e PROMETHEUS_JOB=liberty-jmx \
-  jvm-jmx-mcp:latest
+  jvm-mcp:latest
 ```
 
 ## Configuration

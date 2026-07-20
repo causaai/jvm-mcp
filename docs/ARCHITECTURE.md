@@ -428,7 +428,7 @@ public class MemoryToolsTest {
 version: '3.8'
 services:
   mcp-server:
-    image: jvm-jmx-mcp:latest
+    image: jvm-mcp:latest
     ports:
       - "8080:8080"
     environment:

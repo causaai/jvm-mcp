@@ -59,7 +59,7 @@ Open Prometheus UI and query: `jvm_memory_heap_used_bytes`
 
 ```bash
 # Clone the repository
-cd jvm-jmx-mcp
+cd jvm-mcp
 
 # Build with Maven
 ./mvnw clean package -DskipTests
