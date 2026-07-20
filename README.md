@@ -30,8 +30,8 @@ This MCP server exposes specialized tools that enable AI agents to investigate J
 
 ```bash
 # Clone the repository
-git clone <repository-url>
-cd jvm-jmx-mcp
+git clone https://github.com/causaai/jmx-mcp.git
+cd jmx-mcp
 
 # Build the project
 ./mvnw clean package -DskipTests
