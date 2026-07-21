@@ -47,7 +47,11 @@ public class MemoryTools {
             // Get current heap metrics
             Double heapUsed = metricsService.getCurrentMetricValue("jvm_memory_heap_used_bytes");
             Double heapMax = metricsService.getCurrentMetricValue("jvm_memory_heap_max_bytes");
-            Double heapCommitted = metricsService.getCurrentMetricValue("jvm_memory_heap_committed_bytes");
+            
+            // Get heap committed bytes using area label
+            Map<String, String> heapLabels = new HashMap<>();
+            heapLabels.put("area", "heap");
+            Double heapCommitted = metricsService.getCurrentMetricValue("jvm_memory_committed_bytes", heapLabels);
             
             if (heapUsed == null || heapMax == null || heapCommitted == null) {
                 result.put("error", "Unable to fetch heap metrics from data source");
