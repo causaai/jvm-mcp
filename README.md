@@ -55,6 +55,31 @@ export PROMETHEUS_JOB=liberty-jmx
 export QUARKUS_HTTP_PORT=8088
 ```
 
+## Health Check Endpoints
+
+The server provides health check endpoints for monitoring:
+
+- **Liveness**: `http://localhost:8088/q/health/live` - Checks if the application is running
+- **Readiness**: `http://localhost:8088/q/health/ready` - Checks if the application is ready to accept requests (includes Prometheus connectivity check)
+- **Overall Health**: `http://localhost:8088/q/health` - Combined liveness and readiness checks
+
+Example health check response:
+```json
+{
+  "status": "UP",
+  "checks": [
+    {
+      "name": "Prometheus data source",
+      "status": "UP",
+      "data": {
+        "type": "prometheus",
+        "status": "connected"
+      }
+    }
+  ]
+}
+```
+
 ## Available MCP Tools
 
 ### 📊 Memory Investigation (3 tools)
