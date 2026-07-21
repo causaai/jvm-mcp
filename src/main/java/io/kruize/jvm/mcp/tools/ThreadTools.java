@@ -3,6 +3,7 @@ package io.kruize.jvm.mcp.tools;
 import io.kruize.jvm.mcp.model.MetricValue;
 import io.kruize.jvm.mcp.service.JvmMetricsService;
 import io.quarkiverse.mcp.server.Tool;
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
@@ -94,8 +95,8 @@ public class ThreadTools {
             Returns: Time-series samples with total/daemon/non-daemon counts, min/max/avg statistics, and growth rate per hour.
             """)
     public Map<String, Object> getThreadActivityOverTime(
-            String lookback,
-            String step) {
+            @Nullable String lookback,
+            @Nullable String step) {
         
         LOG.infof("Executing getThreadActivityOverTime tool with lookback=%s, step=%s", lookback, step);
         

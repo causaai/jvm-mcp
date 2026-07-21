@@ -3,6 +3,7 @@ package io.kruize.jvm.mcp.tools;
 import io.kruize.jvm.mcp.model.MetricValue;
 import io.kruize.jvm.mcp.service.JvmMetricsService;
 import io.quarkiverse.mcp.server.Tool;
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
@@ -204,8 +205,8 @@ public class MemoryTools {
             Returns: Time-series samples with timestamps, min/max/avg statistics for heap and non-heap.
             """)
     public Map<String, Object> getMemoryOverTime(
-            String lookback,
-            String step) {
+            @Nullable String lookback,
+            @Nullable String step) {
         
         LOG.infof("Executing getMemoryOverTime tool with lookback=%s, step=%s", lookback, step);
         

@@ -4,6 +4,7 @@ import io.kruize.jvm.mcp.model.MetricTimeSeries;
 import io.kruize.jvm.mcp.model.MetricValue;
 import io.kruize.jvm.mcp.service.JvmMetricsService;
 import io.quarkiverse.mcp.server.Tool;
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
@@ -125,8 +126,8 @@ public class GarbageCollectionTools {
             Returns: Time-series of GC frequency (per min) and GC time overhead (%) with min/max/avg statistics.
             """)
     public Map<String, Object> getGcBehaviorOverTime(
-            String lookback,
-            String step) {
+            @Nullable String lookback,
+            @Nullable String step) {
         
         LOG.infof("Executing getGcBehaviorOverTime tool with lookback=%s, step=%s", lookback, step);
         
