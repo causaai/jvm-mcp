@@ -3,6 +3,7 @@ package io.kruize.jvm.mcp.tools;
 import io.kruize.jvm.mcp.model.MetricValue;
 import io.kruize.jvm.mcp.service.JvmMetricsService;
 import io.quarkiverse.mcp.server.Tool;
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
@@ -43,7 +44,7 @@ public class AdvancedRcaTools {
             
             Returns: Allocation rate (MB/sec, GB/hour), total allocated, interpretation (CRITICAL/WARNING/MODERATE/LOW).
             """)
-    public Map<String, Object> getMemoryAllocationRate(String lookback) {
+    public Map<String, Object> getMemoryAllocationRate(@Nullable String lookback) {
         LOG.infof("Executing getMemoryAllocationRate with lookback=%s", lookback);
         
         if (lookback == null || lookback.isEmpty()) {
@@ -118,7 +119,7 @@ public class AdvancedRcaTools {
             
             Returns: GC frequency, GC time %, heap growth, GC pressure score (0-100), interpretation, and specific recommendations.
             """)
-    public Map<String, Object> getGcPressureAnalysis(String lookback) {
+    public Map<String, Object> getGcPressureAnalysis(@Nullable String lookback) {
         LOG.infof("Executing getGcPressureAnalysis with lookback=%s", lookback);
         
         if (lookback == null || lookback.isEmpty()) {
@@ -242,7 +243,7 @@ public class AdvancedRcaTools {
             
             Returns: Post-GC heap trend, growth rate, full GC count, leak likelihood score (0-100), assessment (HIGH/MEDIUM/LOW/MINIMAL).
             """)
-    public Map<String, Object> getMemoryLeakIndicators(String lookback) {
+    public Map<String, Object> getMemoryLeakIndicators(@Nullable String lookback) {
         LOG.infof("Executing getMemoryLeakIndicators with lookback=%s", lookback);
         
         if (lookback == null || lookback.isEmpty()) {
@@ -356,7 +357,7 @@ public class AdvancedRcaTools {
             
             Returns: Thread state distribution, contention %, contention score, interpretation, identified issues, CRITICAL deadlock alerts.
             """)
-    public Map<String, Object> getThreadContentionAnalysis(String lookback) {
+    public Map<String, Object> getThreadContentionAnalysis(@Nullable String lookback) {
         LOG.infof("Executing getThreadContentionAnalysis with lookback=%s", lookback);
         
         if (lookback == null || lookback.isEmpty()) {

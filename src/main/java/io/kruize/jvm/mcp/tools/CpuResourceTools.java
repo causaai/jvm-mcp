@@ -3,6 +3,7 @@ package io.kruize.jvm.mcp.tools;
 import io.kruize.jvm.mcp.model.MetricValue;
 import io.kruize.jvm.mcp.service.JvmMetricsService;
 import io.quarkiverse.mcp.server.Tool;
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
@@ -169,8 +170,8 @@ public class CpuResourceTools {
             Returns: Time-series of CPU cores, resident memory bytes, and file descriptor counts.
             """)
     public Map<String, Object> getResourceUsageOverTime(
-            String lookback,
-            String step) {
+            @Nullable String lookback,
+            @Nullable String step) {
         
         LOG.infof("Executing getResourceUsageOverTime tool with lookback=%s, step=%s", lookback, step);
         

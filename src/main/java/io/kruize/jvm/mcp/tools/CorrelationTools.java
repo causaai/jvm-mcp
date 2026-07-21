@@ -3,6 +3,7 @@ package io.kruize.jvm.mcp.tools;
 import io.kruize.jvm.mcp.model.MetricValue;
 import io.kruize.jvm.mcp.service.JvmMetricsService;
 import io.quarkiverse.mcp.server.Tool;
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
@@ -41,8 +42,8 @@ public class CorrelationTools {
             Returns: Synchronized time-series with heap usage/utilization, GC frequency, GC time, plus correlation coefficients.
             """)
     public Map<String, Object> getMemoryGcCorrelation(
-            String lookback,
-            String step) {
+            @Nullable String lookback,
+            @Nullable String step) {
         
         LOG.infof("Executing getMemoryGcCorrelation tool with lookback=%s, step=%s", lookback, step);
         
@@ -157,8 +158,8 @@ public class CorrelationTools {
             Returns: Synchronized time-series with CPU cores and GC time %, plus correlation coefficient and averages.
             """)
     public Map<String, Object> getCpuGcCorrelation(
-            String lookback,
-            String step) {
+            @Nullable String lookback,
+            @Nullable String step) {
         
         LOG.infof("Executing getCpuGcCorrelation tool with lookback=%s, step=%s", lookback, step);
         

@@ -3,6 +3,7 @@ package io.kruize.jvm.mcp.tools;
 import io.kruize.jvm.mcp.model.MetricValue;
 import io.kruize.jvm.mcp.service.JvmMetricsService;
 import io.quarkiverse.mcp.server.Tool;
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
@@ -44,7 +45,7 @@ public class TimeWindowTools {
     public Map<String, Object> getIncidentWindowData(
             String startTime,
             String endTime,
-            String step) {
+            @Nullable String step) {
         
         LOG.infof("Executing getIncidentWindowData tool with start=%s, end=%s, step=%s", 
             startTime, endTime, step);
@@ -109,7 +110,7 @@ public class TimeWindowTools {
             """)
     public Map<String, Object> getBeforeAfterSnapshot(
             String eventTime,
-            String window) {
+            @Nullable String window) {
         
         LOG.infof("Executing getBeforeAfterSnapshot tool with eventTime=%s, window=%s", 
             eventTime, window);
